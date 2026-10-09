@@ -1,6 +1,7 @@
 import cv2
 import os
 import re
+import csv
 import numpy as np
 import pytesseract
 from pytesseract import Output
@@ -11,6 +12,9 @@ from pytesseract import Output
 # =========================================================
 
 FOLDER = "gambar_ijazah"
+
+# Semua output akan disimpan di folder ini
+OUTPUT_FOLDER = "hasil"
 
 # Nomor ijazah sebenarnya.
 # GANTI sesuai nomor ijazah pada dataset kamu.
@@ -38,6 +42,22 @@ if not tesseract_found:
     print("ERROR: Tesseract tidak ditemukan!")
     print("Pastikan Tesseract sudah terinstall.")
     exit()
+
+# Siapkan folder output secara otomatis
+FOLDER_GRAYSCALE = os.path.join(OUTPUT_FOLDER, "grayscale")
+FOLDER_ENHANCEMENT = os.path.join(OUTPUT_FOLDER, "enhancement")
+FOLDER_CONTRAST = os.path.join(FOLDER_ENHANCEMENT, "contrast_stretching")
+FOLDER_CLAHE = os.path.join(FOLDER_ENHANCEMENT, "clahe")
+FOLDER_GAMMA = os.path.join(FOLDER_ENHANCEMENT, "gamma_correction")
+FOLDER_TERBAIK = os.path.join(OUTPUT_FOLDER, "enhancement_terbaik")
+FOLDER_MASK = os.path.join(OUTPUT_FOLDER, "text_mask")
+FOLDER_DETEKSI = os.path.join(OUTPUT_FOLDER, "deteksi_tanda_tangan")
+
+for folder_output in [
+    OUTPUT_FOLDER, FOLDER_GRAYSCALE, FOLDER_CONTRAST, FOLDER_CLAHE,
+    FOLDER_GAMMA, FOLDER_TERBAIK, FOLDER_MASK, FOLDER_DETEKSI
+]:
+    os.makedirs(folder_output, exist_ok=True)
 
 
 # =========================================================
@@ -246,7 +266,8 @@ def buat_text_mask(gray):
 def deteksi_metode(
     gray,
     text_mask,
-    adaptive=False
+    adaptive=False,
+    output_path=None
 ):
 
     # -----------------------------------------------------
@@ -304,6 +325,10 @@ def deteksi_metode(
         kernel,
         iterations=2
     )
+
+    # Simpan citra biner hasil thresholding dan morphology jika diminta
+    if output_path is not None:
+        cv2.imwrite(output_path, binary)
 
     # -----------------------------------------------------
     # CONNECTED COMPONENTS
@@ -450,24 +475,28 @@ def deteksi_metode(
 # 9. MEMBANDINGKAN OTSU DAN ADAPTIVE THRESHOLD
 # =========================================================
 
-def deteksi_tanda_tangan(gray):
+def deteksi_tanda_tangan(gray, nama_file):
 
     # OCR digunakan untuk mendapatkan
     # area teks yang akan dihilangkan
     text_mask = buat_text_mask(gray)
+    nama_dasar = os.path.splitext(nama_file)[0]
+    cv2.imwrite(os.path.join(FOLDER_MASK, f"{nama_dasar}_text_mask.png"), text_mask)
 
     # Otsu
     hasil_otsu = deteksi_metode(
         gray,
         text_mask,
-        adaptive=False
+        adaptive=False,
+        output_path=os.path.join(FOLDER_DETEKSI, f"{nama_dasar}_otsu.png")
     )
 
     # Adaptive Threshold
     hasil_adaptive = deteksi_metode(
         gray,
         text_mask,
-        adaptive=True
+        adaptive=True,
+        output_path=os.path.join(FOLDER_DETEKSI, f"{nama_dasar}_adaptive.png")
     )
 
     # -----------------------------------------------------
@@ -566,6 +595,8 @@ for filename in files:
     # -----------------------------------------------------
 
     gray = grayscale(image)
+    nama_dasar = os.path.splitext(filename)[0]
+    cv2.imwrite(os.path.join(FOLDER_GRAYSCALE, f"{nama_dasar}_grayscale.png"), gray)
 
     # -----------------------------------------------------
     # IMAGE ENHANCEMENT
@@ -585,6 +616,11 @@ for filename in files:
                 gamma=1.5
             )
     }
+
+    # Simpan semua citra hasil enhancement
+    cv2.imwrite(os.path.join(FOLDER_CONTRAST, f"{nama_dasar}_contrast_stretching.png"), enhancement["Contrast Stretching"])
+    cv2.imwrite(os.path.join(FOLDER_CLAHE, f"{nama_dasar}_clahe.png"), enhancement["CLAHE"])
+    cv2.imwrite(os.path.join(FOLDER_GAMMA, f"{nama_dasar}_gamma_correction.png"), enhancement["Gamma Correction"])
 
     hasil_ocr = []
 
@@ -618,13 +654,17 @@ for filename in files:
         hasil_ocr,
         key=lambda x: x[2]
     )
+    cv2.imwrite(
+        os.path.join(FOLDER_TERBAIK, f"{nama_dasar}_enhancement_terbaik.png"),
+        enhancement[terbaik[0]]
+    )
 
     # -----------------------------------------------------
     # DETEKSI TANDA TANGAN
     # -----------------------------------------------------
 
     signature, percentage, metode_signature = \
-        deteksi_tanda_tangan(gray)
+        deteksi_tanda_tangan(gray, filename)
 
     # -----------------------------------------------------
     # SIMPAN HASIL
@@ -714,3 +754,36 @@ for row in hasil:
     )
 
 print("\nProses selesai.")
+
+
+# =========================================================
+# 13. SIMPAN HASIL VERIFIKASI KE CSV
+# =========================================================
+
+file_csv = os.path.join(OUTPUT_FOLDER, "hasil_verifikasi.csv")
+
+with open(file_csv, "w", newline="", encoding="utf-8-sig") as file:
+    writer = csv.writer(file)
+    writer.writerow([
+        "Nama Gambar",
+        "Nomor Ijazah OCR",
+        "CER (%)",
+        "Enhancement Terbaik",
+        "Status Tanda Tangan",
+        "Persentase Area (%)",
+        "Metode Deteksi Tanda Tangan"
+    ])
+
+    for row in hasil:
+        writer.writerow([
+            row[0],
+            row[1],
+            f"{row[2]:.2f}",
+            row[3],
+            row[4],
+            f"{row[5]:.2f}",
+            row[6]
+        ])
+
+print(f"\nFile CSV berhasil disimpan: {file_csv}")
+print(f"Semua citra hasil disimpan di folder: {OUTPUT_FOLDER}/")

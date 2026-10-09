@@ -1,0 +1,19 @@
+﻿Nama Gambar,Nomor Ijazah OCR,CER (%),Enhancement Terbaik,Status Tanda Tangan,Persentase Area (%),Metode Deteksi Tanda Tangan
+01_HighQuality_Enhanced (1).jpg,571012022000056,0.00,CLAHE,PRESENT,0.51,Otsu
+02_LowContrast (1).jpg,571012022000056,0.00,Contrast Stretching,PRESENT,0.53,Otsu
+03_Blurred (1).jpg,571012022000056,0.00,CLAHE,PRESENT,0.83,Otsu
+04_HighNoise (1).jpg,571012022000056,0.00,CLAHE,PRESENT,0.52,Otsu
+05_LowResolution_Upsampled (1).jpg,571012022000056,0.00,CLAHE,PRESENT,0.59,Otsu
+06_Faded_Underexposed (1).jpg,571012022000056,0.00,CLAHE,PRESENT,0.54,Otsu
+07_ColorShift_WarmTint (1).jpg,571012022000056,0.00,CLAHE,PRESENT,0.54,Otsu
+08_JPEGCompression_Artifacts (1).jpg,571012022000056,0.00,CLAHE,PRESENT,0.54,Otsu
+09_CombinedDegradation (1).jpg,571012022000056,0.00,CLAHE,PRESENT,0.58,Otsu
+gambar_1.jpg,571012022000056,0.00,CLAHE,ABSENT,0.00,Otsu
+gambar_2.jpg,571012022000056,0.00,Contrast Stretching,ABSENT,0.00,Otsu
+gambar_3.jpg,571012022000056,0.00,Contrast Stretching,ABSENT,0.00,Otsu
+gambar_4.jpg,571012022000056,0.00,CLAHE,ABSENT,0.00,Otsu
+gambar_5.jpg,571012022000056,0.00,CLAHE,ABSENT,0.00,Otsu
+gambar_6.jpg,571012022000056,0.00,CLAHE,ABSENT,0.00,Otsu
+gambar_7.jpg,571012022000056,0.00,CLAHE,ABSENT,0.00,Otsu
+gambar_8.jpg,571012022000056,0.00,CLAHE,ABSENT,0.00,Otsu
+gambar_9.jpg,571012022000056,0.00,Contrast Stretching,ABSENT,0.00,Otsu
